@@ -88,10 +88,12 @@ def render(ops, today, updated):
     for o in ops:
         now = o["start"] <= today <= o["end"]
         left = (o["end"] - today).days
-        d = (f'{o["start"]:%m/%d}–{o["end"]:%m/%d}' if o["start"].year == o["end"].year
-             else f'{o["start"]:%Y/%m/%d}–{o["end"]:%Y/%m/%d}')
-        state = (f'<span class="badge now">運用中</span><span class="left">残り{left}日</span>' if now
-                 else f'<span class="left">{(o["start"] - today).days}日後から</span>')
+        mon = lambda x: f'{x:%b} {x.day}' + (f', {x.year}' if o["start"].year != o["end"].year else "")
+        d = f'{mon(o["start"])} – {mon(o["end"])}'          # 月を英語の略称にして、日付の順番の誤解を防ぐ
+        until = (o["start"] - today).days
+        en = lambda n, w: f'{n} {w}' + ("" if n == 1 else "s")
+        state = (f'<span class="badge now">運用中 Active</span><span class="left">残り{left}日 / {en(left, "day")} left</span>'
+                 if now else f'<span class="left">{until}日後から / starts in {en(until, "day")}</span>')
         call = html.escape(o["call"])
         link = o["url"] or f'https://www.qrz.com/db/{o["call"]}'
         chips = "".join(f'<span class="chip">{b}</span>' for b in o["bands"])
@@ -110,7 +112,7 @@ def render(ops, today, updated):
     return f"""<!DOCTYPE html>
 <html lang="ja"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>DXペディション予定（3か月以内） | JA1BBE</title>
+<title>DXペディション予定 / DXpeditions — next 3 months | JA1BBE</title>
 <style>
 :root {{ --ink:#1C2430; --sub:#5A6573; --rule:#D5DAE1; --paper:#FFFFFF; --tint:#F3F5F8;
         --good:#1F7A4D; --navy:#24476B; --chip:#E9EEF4; color-scheme: light; }}
@@ -125,6 +127,8 @@ header {{ background:var(--navy); color:#fff; border-radius:6px 6px 0 0; padding
 @media (prefers-color-scheme: dark) {{ header {{ background:#24476B; }} }}
 header h1 {{ margin:0; font-size:20px; }}
 header p {{ margin:4px 0 0; font-size:12px; opacity:.85; }}
+header .en-title {{ font-size:13px; opacity:.9; margin-top:2px; }}
+footer .en {{ color:var(--sub); }}
 .panel {{ background:var(--paper); border-radius:0 0 6px 6px; padding:8px 16px 16px; }}
 .filters {{ position:sticky; top:0; background:var(--paper); padding:8px 0; border-bottom:2px solid var(--ink); z-index:2; }}
 .filters div {{ margin:4px 0; }}
@@ -150,18 +154,21 @@ footer a {{ color:var(--navy); }}
 </style></head>
 <body><main>
 <header><h1>DXペディション予定（3か月以内）</h1>
-<p>運用中 {n_now}件・全{len(ops)}件　更新: {updated}</p></header>
+<div class="en-title">DXpeditions — current and upcoming, next 3 months</div>
+<p>運用中 Active {n_now}・全 Total {len(ops)}　更新 Updated: {updated}</p></header>
 <div class="panel">
 <div class="filters">
-<div><button data-now="1">運用中だけ</button>{bands_btn}</div>
-<div>{modes_btn}<button data-clear="1">すべて表示</button></div>
+<div><button data-now="1">運用中だけ / Active only</button>{bands_btn}</div>
+<div>{modes_btn}<button data-clear="1">すべて表示 / Show all</button></div>
 <div class="count" id="count"></div>
 </div>
-{"".join(rows) or '<p>現在、予定はありません。</p>'}
+{"".join(rows) or '<p>現在、予定はありません。 / No operations are listed at present.</p>'}
 <footer>
 バンドとモードの表示と絞り込みは、各運用の説明文（Info）から自動で推定したものです。説明に書かれていないバンドやモードで運用されることもあります。<br>
-出典: <a href="{ADXO_TABLE}" target="_blank" rel="noopener">NG3K Announced DX Operations</a>（Bill Feidt, NG3K）。発表時点の予定で、変更・中止があります。最新の情報は出典のページでご確認ください。<br>
-作成: <a href="{HOME}" target="_blank" rel="noopener">JA1BBE</a>（1日2回、自動で更新）
+<span class="en">Band and mode tags and filters are derived automatically from each Info text; operations may also use bands or modes not mentioned there.</span><br>
+出典 Source: <a href="{ADXO_TABLE}" target="_blank" rel="noopener">NG3K Announced DX Operations</a>（Bill Feidt, NG3K）。発表時点の予定で、変更・中止があります。最新の情報は出典のページでご確認ください。<br>
+<span class="en">Schedules are as announced and may change or be cancelled. Please check the source page for the latest information.</span><br>
+作成 By: <a href="{HOME}" target="_blank" rel="noopener">JA1BBE</a>（1日2回、自動で更新 / updated automatically twice a day）
 </footer>
 </div></main>
 <script>
@@ -181,7 +188,7 @@ footer a {{ color:var(--navy); }}
       b.classList.toggle('on', !!((b.dataset.now && st.now) || (b.dataset.band && b.dataset.band === st.band)
                                 || (b.dataset.mode && b.dataset.mode === st.mode)));
     }});
-    document.getElementById('count').textContent = n + '件を表示中';
+    document.getElementById('count').textContent = n + '件を表示中 / Showing ' + n;
   }}
   btns.forEach(function (b) {{
     b.addEventListener('click', function () {{
