@@ -104,7 +104,7 @@ def render(ops, today, updated):
             f'<div class="chips">{chips}</div>'
             f'<p class="info">{html.escape(o["info"])}</p>'
             f'<div class="qsl">QSL: {html.escape(o["qsl"] or "—")}</div></article>')
-    bands_btn = "".join(f'<button data-band="{b}">{b}</button>' for b in BANDS if b != "60m")
+    bands_btn = "".join(f'<button data-band="{b}">{b}</button>' for b in BANDS)
     modes_btn = "".join(f'<button data-mode="{m}">{m}</button>' for m in ["CW", "SSB", "FT8", "FT4", "RTTY"])
     n_now = sum(1 for o in ops if o["start"] <= today <= o["end"])
     return f"""<!DOCTYPE html>
