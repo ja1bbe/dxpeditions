@@ -83,6 +83,16 @@ def modes_of(info):
     return found
 
 
+def qsl_text(q):
+    """ADXOのQSL欄。NG3Kの書き方: 「?」= QSLに応じない可能性、「TBA」= 後日発表"""
+    q = (q or "").strip()
+    if q == "?":
+        return "?（応じない可能性 / may not QSL）"
+    if q.upper() == "TBA":
+        return "TBA（後日発表 / to be announced）"
+    return html.escape(q or "—")
+
+
 def render(ops, today, updated):
     rows = []
     for o in ops:
@@ -105,7 +115,7 @@ def render(ops, today, updated):
             f'<h2>{html.escape(o["entity"])} <a href="{html.escape(link)}" target="_blank" rel="noopener">{call}</a></h2>'
             f'<div class="chips">{chips}</div>'
             f'<p class="info">{html.escape(o["info"])}</p>'
-            f'<div class="qsl">QSL: {html.escape(o["qsl"] or "—")}</div></article>')
+            f'<div class="qsl">QSL: {qsl_text(o["qsl"])}</div></article>')
     bands_btn = "".join(f'<button data-band="{b}">{b}</button>' for b in BANDS)
     modes_btn = "".join(f'<button data-mode="{m}">{m}</button>' for m in ["CW", "SSB", "FT8", "FT4", "RTTY"])
     n_now = sum(1 for o in ops if o["start"] <= today <= o["end"])
@@ -168,7 +178,8 @@ footer a {{ color:var(--navy); }}
 <span class="en">Band and mode tags and filters are derived automatically from each Info text; operations may also use bands or modes not mentioned there.</span><br>
 出典 Source: <a href="{ADXO_TABLE}" target="_blank" rel="noopener">NG3K Announced DX Operations</a>（Bill Feidt, NG3K）。発表時点の予定で、変更・中止があります。最新の情報は出典のページでご確認ください。<br>
 <span class="en">Schedules are as announced and may change or be cancelled. Please check the source page for the latest information.</span><br>
-作成 By: <a href="{HOME}" target="_blank" rel="noopener">JA1BBE</a>（1日2回、自動で更新 / updated automatically twice a day）
+作成 By: <a href="{HOME}" target="_blank" rel="noopener">JA1BBE</a>（1日2回、自動で更新 / updated automatically twice a day）<br>
+<a href="https://hits.sh/ja1bbe.github.io/dxpeditions/" target="_blank" rel="noopener"><img alt="Hits" src="https://hits.sh/ja1bbe.github.io/dxpeditions/.svg" style="vertical-align:middle;margin-top:6px;"></a>
 </footer>
 </div></main>
 <script>
