@@ -83,6 +83,27 @@ def modes_of(info):
     return found
 
 
+FULLCALL = re.compile(r"^[A-Z0-9]{1,3}[0-9][A-Z0-9]*[A-Z]$")   # 例 V26JJ、5Z4GO。J3・3B9・KH0 のようなプリフィックスだけのものは除く
+
+
+def links_of(o):
+    """(運用の詳細のURL, QRZ.comのURL) を返す。
+    NG3KのADXOがコールサインにリンクを付けていればそれを使う（QRZ.comへのリンクならQRZ.comのボタンに回す）。
+    ADXOにQRZ.comのリンクがなければ、コールサインが完全な形のときだけQRZ.comのページを作る。"""
+    url = o["url"]
+    web = qrz = None
+    if url:
+        if "qrz.com" in url.lower():
+            qrz = url
+        else:
+            web = url
+    if not qrz:
+        parts = [p for p in o["call"].upper().split("/") if FULLCALL.match(p)]
+        if parts:
+            qrz = "https://www.qrz.com/db/" + max(parts, key=len)
+    return web, qrz
+
+
 def qsl_text(q):
     """ADXOのQSL欄。NG3Kの書き方: 「?」= QSLに応じない可能性、「TBA」= 後日発表"""
     q = (q or "").strip()
@@ -105,17 +126,23 @@ def render(ops, today, updated):
         state = (f'<span class="badge now">運用中 Active</span><span class="left">残り{left}日 / {en(left, "day")} left</span>'
                  if now else f'<span class="left">{until}日後から / starts in {en(until, "day")}</span>')
         call = html.escape(o["call"])
-        link = o["url"] or f'https://www.qrz.com/db/{o["call"]}'
+        web, qrz = links_of(o)
+        btns = ""
+        if web:
+            btns += f'<a class="btn" href="{html.escape(web)}" target="_blank" rel="noopener">運用の詳細 / Web</a>'
+        if qrz:
+            btns += f'<a class="btn" href="{html.escape(qrz)}" target="_blank" rel="noopener">QRZ.com</a>'
         chips = "".join(f'<span class="chip">{b}</span>' for b in o["bands"])
         chips += "".join(f'<span class="chip mode">{m}</span>' for m in o["modes"])
         rows.append(
             f'<article class="op" data-now="{int(now)}" data-bands="{" ".join(o["bands"])}" '
             f'data-modes="{" ".join(o["modes"])}">'
             f'<div class="meta">{d}　{state}</div>'
-            f'<h2>{html.escape(o["entity"])} <a href="{html.escape(link)}" target="_blank" rel="noopener">{call}</a></h2>'
+            f'<h2>{html.escape(o["entity"])} <span class="call">{call}</span></h2>'
             f'<div class="chips">{chips}</div>'
             f'<p class="info">{html.escape(o["info"])}</p>'
-            f'<div class="qsl">QSL: {qsl_text(o["qsl"])}</div></article>')
+            f'<div class="qsl">QSL: {qsl_text(o["qsl"])}</div>'
+            + (f'<div class="links">{btns}</div>' if btns else "") + '</article>')
     bands_btn = "".join(f'<button data-band="{b}">{b}</button>' for b in BANDS)
     modes_btn = "".join(f'<button data-mode="{m}">{m}</button>' for m in ["CW", "SSB", "FT8", "FT4", "RTTY"])
     n_now = sum(1 for o in ops if o["start"] <= today <= o["end"])
@@ -150,7 +177,11 @@ footer .en {{ color:var(--sub); }}
 .op[hidden] {{ display:none; }}
 .meta {{ font-size:13px; color:var(--sub); }}
 .op h2 {{ margin:2px 0; font-size:19px; }}
-.op h2 a {{ color:var(--navy); font-weight:700; text-decoration:none; margin-left:6px; }}
+.op h2 .call {{ color:var(--navy); font-weight:700; margin-left:6px; }}
+.links {{ margin-top:6px; }}
+.btn {{ display:inline-block; font-size:12px; padding:3px 10px; margin:2px 6px 0 0; border:1px solid var(--navy);
+       border-radius:4px; color:var(--navy); text-decoration:none; }}
+.btn:hover {{ background:var(--navy); color:var(--paper); }}
 .badge {{ display:inline-block; font-size:12px; font-weight:700; padding:1px 7px; border-radius:3px; }}
 .badge.now {{ background:var(--good); color:#fff; }}
 .left {{ font-size:12px; color:var(--sub); margin-left:6px; }}
@@ -178,6 +209,8 @@ footer a {{ color:var(--navy); }}
 <span class="en">Band and mode tags and filters are derived automatically from each Info text; operations may also use bands or modes not mentioned there.</span><br>
 出典 Source: <a href="{ADXO_TABLE}" target="_blank" rel="noopener">NG3K Announced DX Operations</a>（Bill Feidt, NG3K）。発表時点の予定で、変更・中止があります。最新の情報は出典のページでご確認ください。<br>
 <span class="en">Schedules are as announced and may change or be cancelled. Please check the source page for the latest information.</span><br>
+「運用の詳細 / Web」はNG3Kのページに載っている運用者のWebサイト、「QRZ.com」は運用局のQRZ.comのページです（QRZ.comはログインしないと一部が見られない場合があります）。<br>
+<span class="en">"Web" links to the operation's website as listed by NG3K; "QRZ.com" links to the station's QRZ.com page (some details may require login).</span><br>
 作成 By: <a href="{HOME}" target="_blank" rel="noopener">JA1BBE</a>（1日2回、自動で更新 / updated automatically twice a day）<br>
 <a href="https://hits.sh/ja1bbe.github.io/dxpeditions/" target="_blank" rel="noopener"><img alt="Hits" src="https://hits.sh/ja1bbe.github.io/dxpeditions/.svg" style="vertical-align:middle;margin-top:6px;"></a>
 </footer>
