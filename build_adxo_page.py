@@ -139,6 +139,8 @@ def render(ops, today, updated):
                  if now else f'<span class="left">{until}日後から / starts in {en(until, "day")}</span>')
         call = html.escape(o["call"])
         web, qrz = links_of(o)
+        call_html = (f'<a class="call" href="{html.escape(qrz)}" target="_blank" rel="noopener">{call}</a>'
+                     if qrz else f'<span class="call">{call}</span>')
         btns = ""
         if web:
             btns += f'<a class="btn" href="{html.escape(web)}" target="_blank" rel="noopener">運用の詳細 / Web</a>'
@@ -150,7 +152,7 @@ def render(ops, today, updated):
             f'<article class="op" data-now="{int(now)}" data-bands="{" ".join(o["bands"])}" '
             f'data-modes="{" ".join(o["modes"])}">'
             f'<div class="meta">{d}　{state}</div>'
-            f'<h2>{html.escape(o["entity"])} <span class="call">{call}</span></h2>'
+            f'<h2>{html.escape(o["entity"])} {call_html}</h2>'
             f'<div class="chips">{chips}</div>'
             f'<p class="info">{linkify(o["info"])}</p>'
             f'<div class="qsl">QSL: {qsl_text(o["qsl"])}</div>'
@@ -190,6 +192,8 @@ footer .en {{ color:var(--sub); }}
 .meta {{ font-size:13px; color:var(--sub); }}
 .op h2 {{ margin:2px 0; font-size:19px; }}
 .op h2 .call {{ color:var(--navy); font-weight:700; margin-left:6px; }}
+.op h2 a.call {{ text-decoration:none; }}
+.op h2 a.call:hover {{ text-decoration:underline; }}
 .links {{ margin-top:6px; }}
 .btn {{ display:inline-block; font-size:12px; padding:3px 10px; margin:2px 6px 0 0; border:1px solid var(--navy);
        border-radius:4px; color:var(--navy); text-decoration:none; }}
@@ -201,7 +205,7 @@ footer .en {{ color:var(--sub); }}
 .chip {{ display:inline-block; font-size:11px; padding:1px 6px; margin:2px 3px 0 0; border-radius:3px; background:var(--chip); }}
 .chip.mode {{ border:1px solid var(--rule); background:transparent; }}
 .info {{ margin:4px 0; font-size:13px; line-height:1.55; color:var(--sub); }}
-.info a {{ color:var(--navy); word-break:break-all; }}
+.info a {{ color:var(--navy); overflow-wrap:anywhere; }}
 .qsl {{ font-size:12px; color:var(--sub); }}
 footer {{ font-size:12px; line-height:1.7; color:var(--sub); padding-top:14px; }}
 footer a {{ color:var(--navy); }}
