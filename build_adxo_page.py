@@ -104,6 +104,18 @@ def links_of(o):
     return web, qrz
 
 
+def linkify(text):
+    """説明文（Info）をHTML用に変換し、中のURLを押せるリンクにする。文末の「.」「,」「;」「)」はURLに含めない"""
+    out, pos = [], 0
+    for m in re.finditer(r"https?://[^\s<>\"]+", text):
+        url = m.group(0).rstrip(".,;:)")
+        out.append(html.escape(text[pos:m.start()]))
+        out.append(f'<a href="{html.escape(url)}" target="_blank" rel="noopener">{html.escape(url)}</a>')
+        pos = m.start() + len(url)
+    out.append(html.escape(text[pos:]))
+    return "".join(out)
+
+
 def qsl_text(q):
     """ADXOのQSL欄。NG3Kの書き方: 「?」= QSLに応じない可能性、「TBA」= 後日発表"""
     q = (q or "").strip()
@@ -140,7 +152,7 @@ def render(ops, today, updated):
             f'<div class="meta">{d}　{state}</div>'
             f'<h2>{html.escape(o["entity"])} <span class="call">{call}</span></h2>'
             f'<div class="chips">{chips}</div>'
-            f'<p class="info">{html.escape(o["info"])}</p>'
+            f'<p class="info">{linkify(o["info"])}</p>'
             f'<div class="qsl">QSL: {qsl_text(o["qsl"])}</div>'
             + (f'<div class="links">{btns}</div>' if btns else "") + '</article>')
     bands_btn = "".join(f'<button data-band="{b}">{b}</button>' for b in BANDS)
@@ -189,6 +201,7 @@ footer .en {{ color:var(--sub); }}
 .chip {{ display:inline-block; font-size:11px; padding:1px 6px; margin:2px 3px 0 0; border-radius:3px; background:var(--chip); }}
 .chip.mode {{ border:1px solid var(--rule); background:transparent; }}
 .info {{ margin:4px 0; font-size:13px; line-height:1.55; color:var(--sub); }}
+.info a {{ color:var(--navy); word-break:break-all; }}
 .qsl {{ font-size:12px; color:var(--sub); }}
 footer {{ font-size:12px; line-height:1.7; color:var(--sub); padding-top:14px; }}
 footer a {{ color:var(--navy); }}
