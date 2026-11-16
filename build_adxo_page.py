@@ -2,7 +2,7 @@
 """
 DXペディション予定（3か月以内）のWebページを作る（GitHub Actionsで1日2回実行）
 出典: NG3K Announced DX Operations テキスト版 https://www.ng3k.com/Misc/adxoplain.html
-使い方: python build_adxo_page.py               … ADXOを取得して docs/index.html を作る
+使い方: python build_adxo_page.py               … ADXOを取得して docs/index.html（日英）と docs/en.html（英語）を作る
         python build_adxo_page.py 保存したファイル.html … 保存したテキスト版から作る（試験用）
 標準ライブラリだけで動きます。
 """
@@ -14,6 +14,7 @@ ADXO_TABLE = "https://www.ng3k.com/Misc/adxo.html"
 HOME = "https://ja1bbe.wixsite.com/mysite"
 DAYS = 92                                   # 約3か月先まで
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "docs", "index.html")
+OUT_EN = os.path.join(os.path.dirname(OUT), "en.html")      # 海外の局向けの英語だけの版
 MON = {m: i for i, m in enumerate(["Jan", "Feb", "Mar", "Apr", "May", "Jun",
                                    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"], 1)}
 BANDS = ["160m", "80m", "60m", "40m", "30m", "20m", "17m", "15m", "12m", "10m", "6m"]
@@ -116,17 +117,18 @@ def linkify(text):
     return "".join(out)
 
 
-def qsl_text(q):
+def qsl_text(q, lang="ja"):
     """ADXOのQSL欄。NG3Kの書き方: 「?」= QSLに応じない可能性、「TBA」= 後日発表"""
     q = (q or "").strip()
     if q == "?":
-        return "?（応じない可能性 / may not QSL）"
+        return "? (may not QSL)" if lang == "en" else "?（応じない可能性 / may not QSL）"
     if q.upper() == "TBA":
-        return "TBA（後日発表 / to be announced）"
+        return "TBA (to be announced)" if lang == "en" else "TBA（後日発表 / to be announced）"
     return html.escape(q or "—")
 
 
-def render(ops, today, updated):
+def render(ops, today, updated, lang="ja"):
+    E = lang == "en"
     rows = []
     for o in ops:
         now = o["start"] <= today <= o["end"]
@@ -135,15 +137,19 @@ def render(ops, today, updated):
         d = f'{mon(o["start"])} – {mon(o["end"])}'          # 月を英語の略称にして、日付の順番の誤解を防ぐ
         until = (o["start"] - today).days
         en = lambda n, w: f'{n} {w}' + ("" if n == 1 else "s")
-        state = (f'<span class="badge now">運用中 Active</span><span class="left">残り{left}日 / {en(left, "day")} left</span>'
-                 if now else f'<span class="left">{until}日後から / starts in {en(until, "day")}</span>')
+        if E:
+            state = (f'<span class="badge now">Active</span><span class="left">{en(left, "day")} left</span>'
+                     if now else f'<span class="left">starts in {en(until, "day")}</span>')
+        else:
+            state = (f'<span class="badge now">運用中 Active</span><span class="left">残り{left}日 / {en(left, "day")} left</span>'
+                     if now else f'<span class="left">{until}日後から / starts in {en(until, "day")}</span>')
         call = html.escape(o["call"])
         web, qrz = links_of(o)
         call_html = (f'<a class="call" href="{html.escape(qrz)}" target="_blank" rel="noopener">{call}</a>'
                      if qrz else f'<span class="call">{call}</span>')
         btns = ""
         if web:
-            btns += f'<a class="btn" href="{html.escape(web)}" target="_blank" rel="noopener">運用の詳細 / Web</a>'
+            btns += f'<a class="btn" href="{html.escape(web)}" target="_blank" rel="noopener">{"Operation website" if E else "運用の詳細 / Web"}</a>'
         if qrz:
             btns += f'<a class="btn" href="{html.escape(qrz)}" target="_blank" rel="noopener">QRZ.com</a>'
         chips = "".join(f'<span class="chip">{b}</span>' for b in o["bands"])
@@ -155,15 +161,43 @@ def render(ops, today, updated):
             f'<h2>{html.escape(o["entity"])} {call_html}</h2>'
             f'<div class="chips">{chips}</div>'
             f'<p class="info">{linkify(o["info"])}</p>'
-            f'<div class="qsl">QSL: {qsl_text(o["qsl"])}</div>'
+            f'<div class="qsl">QSL: {qsl_text(o["qsl"], lang)}</div>'
             + (f'<div class="links">{btns}</div>' if btns else "") + '</article>')
     bands_btn = "".join(f'<button data-band="{b}">{b}</button>' for b in BANDS)
     modes_btn = "".join(f'<button data-mode="{m}">{m}</button>' for m in ["CW", "SSB", "FT8", "FT4", "RTTY"])
     n_now = sum(1 for o in ops if o["start"] <= today <= o["end"])
+    if E:
+        T = dict(
+            lang="en", hits="ja1bbe.github.io/dxpeditions/en.html", title="Upcoming DXpeditions — next 3 months | JA1BBE",
+            header=f'''<h1>Upcoming DXpeditions — next 3 months</h1>
+<div class="en-title">Current and announced DX operations, based on NG3K Announced DX Operations · <a href="index.html" style="color:#fff;">日本語</a></div>
+<p>Active now {n_now} · Total {len(ops)} · Updated {updated}</p>''',
+            active="Active only", clear="Show all", none="No operations are listed at present.",
+            count="'Showing ' + n",
+            footer=f'''Band and mode tags and filters are derived automatically from each Info text; operations may also use bands or modes not mentioned there.<br>
+Source: <a href="{ADXO_TABLE}" target="_blank" rel="noopener">NG3K Announced DX Operations</a> (Bill Feidt, NG3K), used with permission. Schedules are as announced and may change or be cancelled. Please check the source page for the latest information.<br>
+"Operation website" links to the operation's website as listed by NG3K; "QRZ.com" links to the station's QRZ.com page (some details may require login).<br>
+Compiled by <a href="https://www.qrz.com/db/JA1BBE" target="_blank" rel="noopener">JA1BBE</a> (Tokyo, Japan) · updated automatically twice a day.<br>''')
+    else:
+        T = dict(
+            lang="ja", hits="ja1bbe.github.io/dxpeditions", title="DXペディション予定 / DXpeditions — next 3 months | JA1BBE",
+            header=f'''<h1>DXペディション予定（3か月以内）</h1>
+<div class="en-title">DXpeditions — current and upcoming, next 3 months · <a href="en.html" style="color:#fff;">English</a></div>
+<p>運用中 Active {n_now}・全 Total {len(ops)}　更新 Updated: {updated}</p>''',
+            active="運用中だけ / Active only", clear="すべて表示 / Show all",
+            none="現在、予定はありません。 / No operations are listed at present.",
+            count="n + '件を表示中 / Showing ' + n",
+            footer=f'''バンドとモードの表示と絞り込みは、各運用の説明文（Info）から自動で推定したものです。説明に書かれていないバンドやモードで運用されることもあります。<br>
+<span class="en">Band and mode tags and filters are derived automatically from each Info text; operations may also use bands or modes not mentioned there.</span><br>
+出典 Source: <a href="{ADXO_TABLE}" target="_blank" rel="noopener">NG3K Announced DX Operations</a>（Bill Feidt, NG3K）。発表時点の予定で、変更・中止があります。最新の情報は出典のページでご確認ください。<br>
+<span class="en">Schedules are as announced and may change or be cancelled. Please check the source page for the latest information.</span><br>
+「運用の詳細 / Web」はNG3Kのページに載っている運用者のWebサイト、「QRZ.com」は運用局のQRZ.comのページです（QRZ.comはログインしないと一部が見られない場合があります）。<br>
+<span class="en">"Web" links to the operation's website as listed by NG3K; "QRZ.com" links to the station's QRZ.com page (some details may require login).</span><br>
+作成 By: <a href="{HOME}" target="_blank" rel="noopener">JA1BBE</a>（1日2回、自動で更新 / updated automatically twice a day）<br>''')
     return f"""<!DOCTYPE html>
-<html lang="ja"><head><meta charset="utf-8">
+<html lang="{T['lang']}"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>DXペディション予定 / DXpeditions — next 3 months | JA1BBE</title>
+<title>{T['title']}</title>
 <style>
 :root {{ --ink:#1C2430; --sub:#5A6573; --rule:#D5DAE1; --paper:#FFFFFF; --tint:#F3F5F8;
         --good:#1F7A4D; --navy:#24476B; --chip:#E9EEF4; color-scheme: light; }}
@@ -211,25 +245,16 @@ footer {{ font-size:12px; line-height:1.7; color:var(--sub); padding-top:14px; }
 footer a {{ color:var(--navy); }}
 </style></head>
 <body><main>
-<header><h1>DXペディション予定（3か月以内）</h1>
-<div class="en-title">DXpeditions — current and upcoming, next 3 months</div>
-<p>運用中 Active {n_now}・全 Total {len(ops)}　更新 Updated: {updated}</p></header>
+<header>{T['header']}</header>
 <div class="panel">
 <div class="filters">
-<div><button data-now="1">運用中だけ / Active only</button>{bands_btn}</div>
-<div>{modes_btn}<button data-clear="1">すべて表示 / Show all</button></div>
+<div><button data-now="1">{T['active']}</button>{bands_btn}</div>
+<div>{modes_btn}<button data-clear="1">{T['clear']}</button></div>
 <div class="count" id="count"></div>
 </div>
-{"".join(rows) or '<p>現在、予定はありません。 / No operations are listed at present.</p>'}
+{"".join(rows) or f"<p>{T['none']}</p>"}
 <footer>
-バンドとモードの表示と絞り込みは、各運用の説明文（Info）から自動で推定したものです。説明に書かれていないバンドやモードで運用されることもあります。<br>
-<span class="en">Band and mode tags and filters are derived automatically from each Info text; operations may also use bands or modes not mentioned there.</span><br>
-出典 Source: <a href="{ADXO_TABLE}" target="_blank" rel="noopener">NG3K Announced DX Operations</a>（Bill Feidt, NG3K）。発表時点の予定で、変更・中止があります。最新の情報は出典のページでご確認ください。<br>
-<span class="en">Schedules are as announced and may change or be cancelled. Please check the source page for the latest information.</span><br>
-「運用の詳細 / Web」はNG3Kのページに載っている運用者のWebサイト、「QRZ.com」は運用局のQRZ.comのページです（QRZ.comはログインしないと一部が見られない場合があります）。<br>
-<span class="en">"Web" links to the operation's website as listed by NG3K; "QRZ.com" links to the station's QRZ.com page (some details may require login).</span><br>
-作成 By: <a href="{HOME}" target="_blank" rel="noopener">JA1BBE</a>（1日2回、自動で更新 / updated automatically twice a day）<br>
-<a href="https://hits.sh/ja1bbe.github.io/dxpeditions/" target="_blank" rel="noopener"><img alt="Hits" src="https://hits.sh/ja1bbe.github.io/dxpeditions/.svg" style="vertical-align:middle;margin-top:6px;"></a>
+{T['footer']}<a href="https://hits.sh/{T['hits']}/" target="_blank" rel="noopener"><img alt="Hits" src="https://hits.sh/{T['hits']}/.svg" style="vertical-align:middle;margin-top:6px;"></a>
 </footer>
 </div></main>
 <script>
@@ -249,7 +274,7 @@ footer a {{ color:var(--navy); }}
       b.classList.toggle('on', !!((b.dataset.now && st.now) || (b.dataset.band && b.dataset.band === st.band)
                                 || (b.dataset.mode && b.dataset.mode === st.mode)));
     }});
-    document.getElementById('count').textContent = n + '件を表示中 / Showing ' + n;
+    document.getElementById('count').textContent = {T['count']};
   }}
   btns.forEach(function (b) {{
     b.addEventListener('click', function () {{
@@ -279,7 +304,10 @@ def main():
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
     with open(OUT, "w", encoding="utf-8") as f:
         f.write(render(ops, today, updated))
-    print(f"{len(ops)}件を書き出しました: {OUT}")
+    updated_en = f"{now:%Y-%m-%d %H:%M} UTC"
+    with open(OUT_EN, "w", encoding="utf-8") as f:
+        f.write(render(ops, today, updated_en, "en"))
+    print(f"{len(ops)}件を書き出しました: {OUT}、{OUT_EN}")
 
 
 if __name__ == "__main__":
