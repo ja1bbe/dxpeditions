@@ -5,7 +5,7 @@ DXペディション予定（3か月以内）のWebページを作る（GitHub A
 地図とバンド・時間帯の目安: 宇宙天気ナウキャスト（ja1bbe-iono）の地図データ（land.json）とエンティティの表（cty.json）、
   伝搬研究（ja1bbe/propagation）の受信の集計（paths.json）を、ページを開いたブラウザが読み込んで描く。
   各運用の位置は、ページを作るときに cty.json から求めて埋め込む（取得できないときは地図に載せない）。
-使い方: python build_adxo_page.py               … ADXOを取得して docs/index.html（日英）と docs/en.html（英語）を作る
+使い方: python build_adxo_page.py               … ADXOを取得して docs/index.html（日英）・docs/en.html（英語）・docs/ng3k.html（NG3K版）を作る
         python build_adxo_page.py 保存したファイル.html … 保存したテキスト版から作る（試験用）
 標準ライブラリだけで動きます。
 """
@@ -19,6 +19,7 @@ CTY_URL = "https://raw.githubusercontent.com/ja1bbe/ja1bbe-iono/main/docs/cty.js
 DAYS = 92                                   # 約3か月先まで
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "docs", "index.html")
 OUT_EN = os.path.join(os.path.dirname(OUT), "en.html")      # 海外の局向けの英語だけの版
+OUT_NG3K = os.path.join(os.path.dirname(OUT), "ng3k.html")  # NG3K（Bill Feidt）への贈り物の版：英語、自局の既定は NG3K（FM19KA）
 MON = {m: i for i, m in enumerate(["Jan", "Feb", "Mar", "Apr", "May", "Jun",
                                    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"], 1)}
 BANDS = ["160m", "80m", "60m", "40m", "30m", "20m", "17m", "15m", "12m", "10m", "6m"]
@@ -185,8 +186,10 @@ def qsl_text(q, lang="ja"):
     return html.escape(q or "—")
 
 
-def render(ops, today, updated, lang="ja"):
-    E = lang == "en"
+def render(ops, today, updated, lang="ja", gift=False):
+    E = lang == "en" or gift
+    if gift:
+        lang = "en"
     rows = []
     for i, o in enumerate(ops):
         now = o["start"] <= today <= o["end"]
@@ -229,9 +232,11 @@ def render(ops, today, updated, lang="ja"):
             + (f'<div class="links">{btns}</div>' if btns else "") + '</article>')
     js_ops = [{"call": o["call"], "entity": html.unescape(o["entity"]), "ent": o.get("ent"), "lat": o.get("lat"), "lon": o.get("lon"),
                "now": int(o["start"] <= today <= o["end"]), "start": o["start"].isoformat(), "bands": o["bands"]} for o in ops]
-    map_html = MAP_HTML
-    map_foot = MAP_FOOT_EN if E else MAP_FOOT_JA
-    script = MAP_JS.replace("__LANG__", lang).replace("__OPS__", json.dumps(js_ops, ensure_ascii=False).replace("</", "<\\/"))
+    gift_html = GIFT_NOTE if gift else ""
+    map_html = MAP_HTML.replace('value="PM95"', 'value="NG3K"') if gift else MAP_HTML
+    map_foot = (MAP_FOOT_EN + GIFT_FOOT) if gift else MAP_FOOT_EN if E else MAP_FOOT_JA
+    script = MAP_JS.replace("__LANG__", lang).replace("__DEF__", "NG3K" if gift else "PM95").replace("__KP__", "ng3k" if gift else "dx") \
+        .replace("__FORCE__", "en" if gift else "").replace("__OPS__", json.dumps(js_ops, ensure_ascii=False).replace("</", "<\\/"))
     bands_btn = "".join(f'<button data-band="{b}">{b}</button>' for b in BANDS)
     modes_btn = "".join(f'<button data-mode="{m}">{m}</button>' for m in ["CW", "SSB", "FT8", "FT4", "RTTY"])
     n_now = sum(1 for o in ops if o["start"] <= today <= o["end"])
@@ -247,7 +252,15 @@ def render(ops, today, updated, lang="ja"):
 Source: <a href="{ADXO_TABLE}" target="_blank" rel="noopener">NG3K Announced DX Operations</a> (Bill Feidt, NG3K), used with permission. Schedules are as announced and may change or be cancelled. Please check the source page for the latest information.<br>
 "Operation website" links to the operation's website as listed by NG3K; "QRZ.com" links to the station's QRZ.com page (some details may require login).<br>
 Compiled by <a href="https://www.qrz.com/db/JA1BBE" target="_blank" rel="noopener">JA1BBE</a> (Tokyo, Japan) · updated automatically twice a day.<br>''')
-    else:
+    if gift:
+        T.update(
+            hits=None, title="Announced DX Operations — Map & Path Guide for NG3K",
+            header=f'''<h1>Announced DX Operations — Map &amp; Path Guide</h1>
+<div class="en-title">Prepared for Bill Feidt, NG3K (FM19ka) · based on your ADXO</div>
+<p>Active now {n_now} · Total {len(ops)} · Updated {updated}</p>''',
+            footer=T["footer"].replace("Compiled by", "Prepared with gratitude by").replace("(Tokyo, Japan) · updated automatically twice a day.",
+                                       "(Tokyo, Japan) · updated automatically twice a day from ADXO."))
+    if not E:
         T = dict(
             lang="ja", hits="ja1bbe.github.io/dxpeditions", title="DXペディション予定 / DXpeditions — next 3 months | JA1BBE",
             header=f'''<h1>DXペディション予定（3か月以内）</h1>
@@ -263,6 +276,8 @@ Compiled by <a href="https://www.qrz.com/db/JA1BBE" target="_blank" rel="noopene
 「運用の詳細 / Web」はNG3Kのページに載っている運用者のWebサイト、「QRZ.com」は運用局のQRZ.comのページです（QRZ.comはログインしないと一部が見られない場合があります）。<br>
 <span class="en">"Web" links to the operation's website as listed by NG3K; "QRZ.com" links to the station's QRZ.com page (some details may require login).</span><br>
 作成 By: <a href="{HOME}" target="_blank" rel="noopener">JA1BBE</a>（1日2回、自動で更新 / updated automatically twice a day）<br>''')
+    hits_html = "" if not T.get("hits") else (f'<a href="https://hits.sh/{T["hits"]}/" target="_blank" rel="noopener">'
+                                             f'<img alt="Hits" src="https://hits.sh/{T["hits"]}/.svg" style="vertical-align:middle;margin-top:6px;"></a>')
     return f"""<!DOCTYPE html>
 <html lang="{T['lang']}"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -346,12 +361,18 @@ button.btn {{ font:inherit; font-size:12px; background:transparent; cursor:point
 @media (prefers-color-scheme: dark) {{ .adv-w {{ color:#f08a6b; }} }}
 .adv-n {{ color:var(--sub); font-size:12px; margin:2px 0; }}
 .adv-r {{ margin-top:2px; }}
+.gift {{ margin:12px 0 4px; padding:12px 16px; border-radius:6px; background:var(--tint); position:relative;
+         border:1px solid var(--rule); border-top:4px solid #a3203f; border-bottom:4px solid #2f7a57; }}
+.gift p {{ margin:4px 0; font-size:14px; line-height:1.7; }}
+.gift .to {{ font-family:Georgia,"Times New Roman",serif; font-size:19px; font-weight:700; color:var(--navy); }}
+.gift .sig {{ text-align:right; color:var(--sub); font-size:13px; }}
+.gift .holly {{ position:absolute; top:10px; right:12px; }}
 footer a {{ color:var(--navy); }}
 </style></head>
 <body><main>
 <header>{T['header']}</header>
 <div class="panel">
-{map_html}
+{gift_html}{map_html}
 <div class="filters">
 <div><button data-now="1">{T['active']}</button>{bands_btn}</div>
 <div>{modes_btn}<button data-clear="1">{T['clear']}</button></div>
@@ -359,7 +380,7 @@ footer a {{ color:var(--navy); }}
 </div>
 {"".join(rows) or f"<p>{T['none']}</p>"}
 <footer>
-{T['footer']}{map_foot}<a href="https://hits.sh/{T['hits']}/" target="_blank" rel="noopener"><img alt="Hits" src="https://hits.sh/{T['hits']}/.svg" style="vertical-align:middle;margin-top:6px;"></a>
+{T['footer']}{map_foot}{hits_html}
 </footer>
 </div></main>
 <script>
@@ -421,15 +442,25 @@ MAP_FOOT_EN = """Map and “suggested bands and times” (under test): positions
 Map overlays are for the current time: auroral oval from NOAA OVATION (30–90 min forecast), D-region absorption from NOAA D-RAP, storm extent estimated from solar-wind Bz and speed (NOAA RTSW; under test), and geomagnetic latitude from a dipole approximation. A skewed heading is a hint for a path bending around the auroral oval, not a guarantee. A callsign is placed at its entity centre. Text appears in Japanese when your station is in Japan, otherwise in English.<br>
 Map: Natural Earth (land.json). Space weather: NOAA SWPC. Reception record: PSK Reporter data compiled by JA1BBE (same as <a href="https://ja1bbe.github.io/ja1bbe-iono/nowcast_en.html" target="_blank" rel="noopener">Space Weather Nowcast</a>).<br>"""
 
+GIFT_NOTE = """<section class="gift"><svg class="holly" width="34" height="26" viewBox="0 0 34 26" aria-hidden="true">
+<path d="M4 14c3-1 5-4 6-8 1 3 4 5 7 5-3 2-4 5-4 9-2-3-5-5-9-6z" fill="#2f7a57"/><path d="M30 14c-3-1-5-4-6-8-1 3-4 5-7 5 3 2 4 5 4 9 2-3 5-5 9-6z" fill="#3f9a6b"/>
+<circle cx="15" cy="13" r="3" fill="#c0392b"/><circle cx="19.5" cy="15" r="3" fill="#a3203f"/><circle cx="16.5" cy="18" r="2.6" fill="#d64545"/></svg>
+<p class="to">For Bill, NG3K</p>
+<p>Thank you for Announced DX Operations. For many years it has quietly told DXers around the world where to listen next, and this page, too, is built on it. As a small Christmas present, here is ADXO on a great-circle map centred on your station in FM19ka: the operations on the air now, the path from your shack to each of them, the auroral oval and absorption at this moment, and a rough guide to bands and times.</p>
+<p>Merry Christmas and a Happy New Year 2027.</p>
+<p class="sig">73, Yoshinori Ideno, JA1BBE — Tokyo, Christmas 2026</p></section>"""
+GIFT_FOOT = """This page opens centred on NG3K (FM19ka); enter another callsign or grid to see the view from any station. Japanese reception records (PSK Reporter) are shown only for stations in Japan, so from FM19ka the guide is based on the path geometry and current space weather alone.<br>"""
+
 MAP_JS = r'''(() => {
   // ---- 地図と「バンドと時間帯の目安」（宇宙天気ナウキャストの JA1BBE 伝搬レーダーと同じ計算。検証中）
   // 表示の言語は、自局が日本国内なら日本語、国外なら英語（自局を入れていないときは、そのページの言語）
   const PAGE_LANG = '__LANG__', OPS = __OPS__;
+  const DEF = '__DEF__', KP = '__KP__', FORCE = '__FORCE__';      // 既定の自局・端末に覚える名前の頭・言語の固定（NG3K版は英語に固定）
   const IONO = 'https://ja1bbe.github.io/ja1bbe-iono/';
   const SUMMARY_URL = 'https://raw.githubusercontent.com/ja1bbe/propagation/main/data/summary/paths.json';
   const NOAA = 'https://services.swpc.noaa.gov';
   const RAD = Math.PI / 180, EARTH = 6371, HALF = Math.PI * EARTH, GMPOLE = { lat: 80.8, lon: -72.6 };
-  const KNOWN = { 'JA1BBE': 'PM95RN' };      // 位置がわかっている局（コールサインで入れてもこのグリッドで計算）
+  const KNOWN = { 'JA1BBE': 'PM95RN', 'NG3K': 'FM19KA' };      // 位置がわかっている局（コールサインで入れてもこのグリッドで計算）
   const $ = id => document.getElementById(id);
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
@@ -437,7 +468,7 @@ MAP_JS = r'''(() => {
   const rows = d => Array.isArray(d) && Array.isArray(d[0]) ? d.slice(1).map(r => Object.fromEntries(d[0].map((h, i) => [h, r[i]]))) : (d || []);
   let STATION = null, LAND = null, AUR = null, DRAP = null, SW = null, SFI = null, SUMMARY = null, CTY = null, SEL = null, HITS = [], LG = PAGE_LANG, T = null;
   const flag = (k, def) => { const v = LS(k); return v === null ? def : v === '1'; };
-  let SHOW_UP = flag('dx.showUp', false), MAG_ON = flag('dx.mag', true), DRAP_ON = flag('dx.drap', true), STORM_ON = flag('dx.storm', true);
+  let SHOW_UP = flag(KP + '.showUp', false), MAG_ON = flag(KP + '.mag', true), DRAP_ON = flag(KP + '.drap', true), STORM_ON = flag(KP + '.storm', true);
 
   // ---- 太陽と経路の計算（ナウキャストと同じ式）
   function sunElev(lat, lon, t) {
@@ -580,7 +611,7 @@ MAP_JS = r'''(() => {
       `<br>${T.spState(r.sp)}` + (r.sk ? `<br><span style="color:#b25ee8">ずらした方位 <b>${r.sk.az.toFixed(0)}°</b> を試す価値あり（${llToGrid(r.sk.turn[0], r.sk.turn[1])} 付近で曲がる経路、遠回り 約${kmStr(r.sk.extra)} km。検証中）</span>` : r.needSkew ? '<br>左右60°までずらしても、オーロラ帯を避けて届く経路は見つかりませんでした。' : ''),
     spState: sp => `短経路：地磁気緯度 ${sp.mag >= 0 ? 'N' : 'S'}${Math.abs(sp.mag).toFixed(0)}° まで、途中の${Math.round(sp.dark * 100)}%が夜` + (sp.aur == null ? '' : sp.aur >= 30 ? `、<b style="color:#d64545">オーロラ帯を通過（${sp.aur.toFixed(0)}%）</b>` : sp.aur >= 10 ? `、オーロラ帯の縁（${sp.aur.toFixed(0)}%）` : ''),
     toList: '一覧の案内へ ↓', noneActive: 'いま運用中のペディションはありません。',
-    bad: g => `「${esc(g)}」を判別できなかったため、PM95 を中心にしています。グリッドロケータ（4桁か6桁）か、コールサインで入れてください。`,
+    bad: g => `「${esc(g)}」を判別できなかったため、${esc(DEF)} を中心にしています。グリッドロケータ（4桁か6桁）か、コールサインで入れてください。`,
     centre: (n, note) => `自局：${esc(n)}（${note}）を中心にしています。`, gridNote: g => `グリッド ${g} の中心`, knownNote: g => `登録済みのグリッド ${g}`,
     callNote: (e, g) => `${esc(e)} の代表位置 ${g}。正確にはグリッドロケータで入れてください`, ctyFail: 'コールサインの表を読み込めませんでした。グリッドロケータで入れてください。',
     az: (n, sp, lp, km) => `方位（${esc(n)} から）<b>${sp}°</b>　長経路 ${lp}°　${km} km`,
@@ -614,7 +645,7 @@ MAP_JS = r'''(() => {
       `<br>${T.spState(r.sp)}` + (r.sk ? `<br><span style="color:#b25ee8">Worth trying a skewed heading of <b>${r.sk.az.toFixed(0)}°</b> (path bending near ${llToGrid(r.sk.turn[0], r.sk.turn[1])}, about ${kmStr(r.sk.extra)} km longer; under test)</span>` : r.needSkew ? '<br>No path avoiding the auroral oval was found within ±60°.' : ''),
     spState: sp => `Short path: up to geomagnetic latitude ${sp.mag >= 0 ? 'N' : 'S'}${Math.abs(sp.mag).toFixed(0)}°, ${Math.round(sp.dark * 100)}% in darkness` + (sp.aur == null ? '' : sp.aur >= 30 ? `, <b style="color:#d64545">crosses the auroral oval (${sp.aur.toFixed(0)}%)</b>` : sp.aur >= 10 ? `, edge of the auroral oval (${sp.aur.toFixed(0)}%)` : ''),
     toList: 'See details ↓', noneActive: 'No operations are active right now.',
-    bad: g => `“${esc(g)}” was not recognised; the map is centred on PM95. Enter a 4- or 6-character grid or a callsign.`,
+    bad: g => `“${esc(g)}” was not recognised; the map is centred on ${esc(DEF)}. Enter a 4- or 6-character grid or a callsign.`,
     centre: (n, note) => `Your station: ${esc(n)} (${note}).`, gridNote: g => `centre of grid ${g}`, knownNote: g => `registered grid ${g}`,
     callNote: (e, g) => `centre of ${esc(e)}, ${g}; enter your grid for accuracy`, ctyFail: 'The callsign table could not be loaded. Please enter a grid locator.',
     az: (n, sp, lp, km) => `Heading from ${esc(n)} <b>${sp}°</b>　long path ${lp}°　${km} km`,
@@ -728,7 +759,7 @@ MAP_JS = r'''(() => {
       sw('background:rgb(255,140,60)', L[9]), sw('background:repeating-linear-gradient(90deg,rgb(255,90,90) 0 5px,transparent 5px 8px)', L[10])].join('');
     const now = Date.now(), cur = $('opSel').value;
     $('opSel').innerHTML = `<option value="">${T.opNone}</option>` + OPS.map((o, i) => o.lat == null ? '' :
-      `<option value="${i}">${esc(o.call)}　${esc(o.entity)}（${o.now ? T.opNow : T.opUp(Math.max(0, Math.ceil((isoDay(o.start) - now) / 864e5)))}）</option>`).join('');
+      `<option value="${i}">${esc(o.call)}　${esc(o.entity)}${LG === 'en' ? ' (' : '（'}${o.now ? T.opNow : T.opUp(Math.max(0, Math.ceil((isoDay(o.start) - now) / 864e5)))}${LG === 'en' ? ')' : '）'}</option>`).join('');
     $('opSel').value = SEL != null ? String(SEL) : cur; btns();
   }
   function btns() {
@@ -869,14 +900,14 @@ MAP_JS = r'''(() => {
       catch (e) { note = 'ctyfail'; }
     }
     const ok = !!r;
-    if (!r) { const d = gridToLL('PM95'); r = { name: 'PM95', lat: d.lat, lon: d.lon }; }
+    if (!r) { const d = gridToLL(KNOWN[DEF] || DEF); r = { name: DEF, lat: d.lat, lon: d.lon }; }
     STATION = r;
-    if (ok && userSet) LS('dx.station', raw);
-    LG = ok && (userSet || LS('dx.station')) ? (isJapan(r.lat, r.lon) ? 'ja' : 'en') : PAGE_LANG;
+    if (ok && userSet) LS(KP + '.station', raw);
+    LG = FORCE || (ok && (userSet || LS(KP + '.station')) ? (isJapan(r.lat, r.lon) ? 'ja' : 'en') : PAGE_LANG);
     T = LG === 'en' ? TE : TJ;
     $('stInfo').innerHTML = !ok ? (note === 'ctyfail' ? T.ctyFail : T.bad(raw)) :
       T.centre(r.name, note === 'known' ? T.knownNote(KNOWN[raw]) : note === 'grid' ? T.gridNote(r.name) : T.callNote(r.ent, llToGrid(r.lat, r.lon)));
-    $('myGrid').value = raw || 'PM95';
+    $('myGrid').value = raw || DEF;
     renderLabels();
   }
   async function refresh(userSet) { await setStation(userSet); drawMap(); renderList(); }
@@ -891,8 +922,8 @@ MAP_JS = r'''(() => {
   $('gridGo').addEventListener('click', () => refresh(true));
   $('myGrid').addEventListener('keydown', e => { if (e.key === 'Enter') { e.target.blur(); refresh(true); } });
   const tog = (id, key, get, set) => $(id).addEventListener('click', () => { set(!get()); LS(key, get() ? '1' : '0'); btns(); drawMap(); });
-  tog('magBtn', 'dx.mag', () => MAG_ON, v => MAG_ON = v); tog('drapBtn', 'dx.drap', () => DRAP_ON, v => DRAP_ON = v);
-  tog('stormBtn', 'dx.storm', () => STORM_ON, v => STORM_ON = v); tog('upBtn', 'dx.showUp', () => SHOW_UP, v => SHOW_UP = v);
+  tog('magBtn', KP + '.mag', () => MAG_ON, v => MAG_ON = v); tog('drapBtn', KP + '.drap', () => DRAP_ON, v => DRAP_ON = v);
+  tog('stormBtn', KP + '.storm', () => STORM_ON, v => STORM_ON = v); tog('upBtn', KP + '.showUp', () => SHOW_UP, v => SHOW_UP = v);
   const fh = () => { const f = document.querySelector('.filters'); if (f) document.documentElement.style.setProperty('--fh', f.offsetHeight + 'px'); };
   window.addEventListener('resize', () => { drawMap(); fh(); }); fh();
 
@@ -913,7 +944,7 @@ MAP_JS = r'''(() => {
     ]).then(() => { btns(); drawMap(); });
   }
   (async function init() {
-    const s = LS('dx.station'); if (s) $('myGrid').value = s;
+    const s = LS(KP + '.station'); if (s) $('myGrid').value = s;
     await setStation(false);
     document.querySelectorAll('.adv[data-i]').forEach(el => el.textContent = T.loading);
     drawMap(); renderList();
@@ -950,7 +981,9 @@ def main():
     updated_en = f"{now:%Y-%m-%d %H:%M} UTC"
     with open(OUT_EN, "w", encoding="utf-8") as f:
         f.write(render(ops, today, updated_en, "en"))
-    print(f"{len(ops)}件を書き出しました: {OUT}、{OUT_EN}")
+    with open(OUT_NG3K, "w", encoding="utf-8") as f:
+        f.write(render(ops, today, updated_en, "en", gift=True))
+    print(f"{len(ops)}件を書き出しました: {OUT}、{OUT_EN}、{OUT_NG3K}")
 
 
 if __name__ == "__main__":
