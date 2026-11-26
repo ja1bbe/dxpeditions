@@ -5,7 +5,7 @@ DXペディション予定（3か月以内）のWebページを作る（GitHub A
 地図とバンド・時間帯の目安: 宇宙天気ナウキャスト（ja1bbe-iono）の地図データ（land.json）とエンティティの表（cty.json）、
   伝搬研究（ja1bbe/propagation）の受信の集計（paths.json）を、ページを開いたブラウザが読み込んで描く。
   各運用の位置は、ページを作るときに cty.json から求めて埋め込む（取得できないときは地図に載せない）。
-使い方: python build_adxo_page.py               … ADXOを取得して docs/index.html（日英）・docs/en.html（英語）・docs/ng3k.html（NG3K版）を作る
+使い方: python build_adxo_page.py               … ADXOを取得して docs/index.html（日英）・docs/en.html（英語）・docs/ng3k.html（NG3K版）・docs/ops.json（ナウキャスト用）を作る
         python build_adxo_page.py 保存したファイル.html … 保存したテキスト版から作る（試験用）
 標準ライブラリだけで動きます。
 """
@@ -20,6 +20,7 @@ DAYS = 92                                   # 約3か月先まで
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "docs", "index.html")
 OUT_EN = os.path.join(os.path.dirname(OUT), "en.html")      # 海外の局向けの英語だけの版
 OUT_NG3K = os.path.join(os.path.dirname(OUT), "ng3k.html")  # NG3K（Bill Feidt）への贈り物の版：英語、自局の既定は NG3K（FM19KA）
+OUT_JSON = os.path.join(os.path.dirname(OUT), "ops.json")    # 宇宙天気ナウキャストの伝搬レーダーに重ねるためのデータ
 MON = {m: i for i, m in enumerate(["Jan", "Feb", "Mar", "Apr", "May", "Jun",
                                    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"], 1)}
 BANDS = ["160m", "80m", "60m", "40m", "30m", "20m", "17m", "15m", "12m", "10m", "6m"]
@@ -961,6 +962,24 @@ MAP_JS = r'''(() => {
 '''
 
 
+def write_ops_json(ops, now):
+    """ナウキャストの伝搬レーダーに重ねるためのデータ（docs/ops.json）。
+    ops は3か月以内の運用すべて（運用中が先）。start・end は UTC の日付で、運用中かは読む側がいまの UTC の日付で判定し直す。
+    位置が分からないものは ent・lat・lon が null。ent は cty.json の ent 配列の番号（paths.json の e のキーと同じ）"""
+    rows = []
+    for o in ops:
+        web, qrz = links_of(o)
+        rows.append({"call": o["call"], "entity": html.unescape(o["entity"]), "ent": o.get("ent"),
+                     "lat": o.get("lat"), "lon": o.get("lon"),
+                     "start": o["start"].isoformat(), "end": o["end"].isoformat(),
+                     "bands": o["bands"], "modes": o["modes"], "web": web, "qrz": qrz})
+    data = {"generated": now.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "source": "NG3K Announced DX Operations (Bill Feidt, NG3K)",
+            "source_url": ADXO_URL, "ops": rows}
+    with open(OUT_JSON, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, separators=(",", ":"))
+
+
 def main():
     text = open(sys.argv[1], encoding="utf-8", errors="replace").read() if len(sys.argv) > 1 else fetch()
     now = datetime.now(timezone.utc)
@@ -983,7 +1002,8 @@ def main():
         f.write(render(ops, today, updated_en, "en"))
     with open(OUT_NG3K, "w", encoding="utf-8") as f:
         f.write(render(ops, today, updated_en, "en", gift=True))
-    print(f"{len(ops)}件を書き出しました: {OUT}、{OUT_EN}、{OUT_NG3K}")
+    write_ops_json(ops, now)
+    print(f"{len(ops)}件を書き出しました: {OUT}、{OUT_EN}、{OUT_NG3K}、{OUT_JSON}")
 
 
 if __name__ == "__main__":
