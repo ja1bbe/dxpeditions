@@ -81,12 +81,18 @@ button.btn { font:inherit; font-size:12px; background:transparent; cursor:pointe
 @media (prefers-color-scheme: dark) { .adv-w { color:#f08a6b; } }
 .adv-n { color:var(--sub); font-size:12px; margin:2px 0; }
 .adv-r { margin-top:2px; }
+.gift { margin:12px 0 4px; padding:12px 16px; border-radius:6px; background:var(--tint); position:relative;
+         border:1px solid var(--rule); border-top:4px solid #a3203f; border-bottom:4px solid #2f7a57; }
+.gift p { margin:4px 0; font-size:14px; line-height:1.7; }
+.gift .to { font-family:Georgia,"Times New Roman",serif; font-size:19px; font-weight:700; color:var(--navy); }
+.gift .sig { text-align:right; color:var(--sub); font-size:13px; }
+.gift .holly { position:absolute; top:10px; right:12px; }
 footer a { color:var(--navy); }
 </style></head>
 <body><main>
 <header><h1>Upcoming DXpeditions — next 3 months</h1>
 <div class="en-title">Current and announced DX operations, based on NG3K Announced DX Operations · <a href="index.html" style="color:#fff;">日本語</a></div>
-<p>Active now 17 · Total 40 · Updated 2026-11-26 02:00 UTC</p></header>
+<p>Active now 17 · Total 40 · Updated 2026-11-26 02:40 UTC</p></header>
 <div class="panel">
 <section id="mapCard">
 <h2 id="mapTitle"></h2>
@@ -153,11 +159,12 @@ Map: Natural Earth (land.json). Space weather: NOAA SWPC. Reception record: PSK 
   // ---- 地図と「バンドと時間帯の目安」（宇宙天気ナウキャストの JA1BBE 伝搬レーダーと同じ計算。検証中）
   // 表示の言語は、自局が日本国内なら日本語、国外なら英語（自局を入れていないときは、そのページの言語）
   const PAGE_LANG = 'en', OPS = [{"call": "3B9", "entity": "Rodrigues I", "ent": 5, "lat": -19.7, "lon": 63.42, "now": 1, "start": "2026-10-20", "bands": ["160m", "80m", "40m", "30m", "20m", "17m", "15m", "12m", "10m", "6m"]}, {"call": "TZ4AM", "entity": "Mali", "ent": 267, "lat": 18.0, "lon": -2.58, "now": 1, "start": "2026-10-22", "bands": ["80m", "40m", "30m", "20m", "17m", "15m", "12m", "10m", "6m"]}, {"call": "5R8IC", "entity": "Madagascar", "ent": 30, "lat": -19.0, "lon": 46.58, "now": 1, "start": "2026-10-25", "bands": ["80m", "40m", "30m", "20m", "17m", "15m", "12m", "10m"]}, {"call": "8P", "entity": "Barbados", "ent": 43, "lat": 13.18, "lon": -59.53, "now": 1, "start": "2026-10-27", "bands": ["80m", "40m", "30m", "20m", "17m", "15m", "12m", "10m"]}, {"call": "VP2V", "entity": "Br Virgin Is", "ent": 293, "lat": 18.33, "lon": -64.75, "now": 1, "start": "2026-10-27", "bands": ["40m", "30m", "20m", "17m", "15m", "12m", "10m"]}, {"call": "5X7W", "entity": "Uganda", "ent": 35, "lat": 1.92, "lon": 32.6, "now": 1, "start": "2026-11-08", "bands": ["80m", "40m", "30m", "20m", "17m", "15m", "12m", "10m"]}, {"call": "VK9XY", "entity": "Christmas I", "ent": 290, "lat": -10.48, "lon": 105.63, "now": 1, "start": "2026-11-16", "bands": ["160m", "80m", "40m", "30m", "20m", "17m", "15m", "12m", "10m", "6m"]}, {"call": "VK9DS", "entity": "Cocos (Keeling) I", "ent": 285, "lat": -12.15, "lon": 96.82, "now": 1, "start": "2026-11-20", "bands": ["80m", "40m", "30m", "20m", "17m", "15m", "12m", "10m", "6m"]}, {"call": "3B8", "entity": "Mauritius", "ent": 4, "lat": -20.35, "lon": 57.5, "now": 1, "start": "2026-11-20", "bands": ["80m", "40m", "30m", "20m", "17m", "15m", "12m", "10m"]}, {"call": "XU7O", "entity": "Cambodia", "ent": 311, "lat": 12.93, "lon": 105.13, "now": 1, "start": "2026-11-21", "bands": ["80m", "60m", "40m", "30m", "20m", "17m", "15m", "12m", "10m"]}, {"call": "3B9", "entity": "Rodrigues I", "ent": 5, "lat": -19.7, "lon": 63.42, "now": 1, "start": "2026-11-22", "bands": ["160m", "80m", "40m", "30m", "20m", "17m", "15m", "12m", "10m", "6m"]}, {"call": "ZD7", "entity": "St Helena", "ent": 334, "lat": -15.97, "lon": -5.72, "now": 1, "start": "2026-11-22", "bands": ["80m", "60m", "40m", "30m", "20m", "17m", "15m", "12m", "10m"]}, {"call": "HR5", "entity": "Honduras", "ent": 161, "lat": 15.0, "lon": -87.0, "now": 1, "start": "2026-11-23", "bands": ["80m", "40m", "30m", "20m", "17m", "15m", "12m", "10m"]}, {"call": "PZ5KW", "entity": "Surinam", "ent": 230, "lat": 4.0, "lon": -56.0, "now": 1, "start": "2026-11-23", "bands": ["80m", "40m", "30m", "20m", "17m", "15m", "12m", "10m"]}, {"call": "HR9", "entity": "Honduras", "ent": 161, "lat": 15.0, "lon": -87.0, "now": 1, "start": "2026-11-25", "bands": ["160m", "80m", "40m", "30m", "20m", "17m", "15m", "12m", "10m", "6m"]}, {"call": "V6AIU", "entity": "Micronesia", "ent": 278, "lat": 6.88, "lon": 158.2, "now": 1, "start": "2026-11-26", "bands": ["80m", "40m", "30m", "20m", "17m", "15m", "12m", "10m"]}, {"call": "VP8TAA", "entity": "Falkland Is", "ent": 297, "lat": -51.63, "lon": -58.72, "now": 1, "start": "2026-11-26", "bands": ["40m", "30m", "20m", "17m", "15m", "12m", "10m"]}, {"call": "VK9DS", "entity": "Christmas I", "ent": 290, "lat": -10.48, "lon": 105.63, "now": 0, "start": "2026-11-28", "bands": ["80m", "40m", "30m", "20m", "17m", "15m", "12m", "10m", "6m"]}, {"call": "A35TV", "entity": "Tonga", "ent": 61, "lat": -21.22, "lon": -175.13, "now": 0, "start": "2026-11-28", "bands": ["160m", "80m", "40m", "30m", "20m", "17m", "15m", "12m", "10m", "6m"]}, {"call": "VP2V", "entity": "Br Virgin Is", "ent": 293, "lat": 18.33, "lon": -64.75, "now": 0, "start": "2026-11-29", "bands": ["80m", "40m", "30m", "20m", "17m", "15m", "12m", "10m", "6m"]}, {"call": "FS", "entity": "St Martin", "ent": 130, "lat": 18.08, "lon": -63.03, "now": 0, "start": "2026-11-30", "bands": ["160m", "80m", "40m", "30m", "20m", "17m", "15m", "12m", "10m"]}, {"call": "XR0Z", "entity": "Juan Fernandez Is", "ent": 80, "lat": -33.6, "lon": -78.85, "now": 0, "start": "2026-12-05", "bands": ["160m", "80m", "40m", "30m", "20m", "17m", "15m", "12m", "10m", "6m"]}, {"call": "C21GD", "entity": "Nauru", "ent": 72, "lat": -0.52, "lon": 166.92, "now": 0, "start": "2026-12-10", "bands": ["80m", "40m", "30m", "20m", "17m", "15m", "12m", "10m", "6m"]}, {"call": "VP8THW", "entity": "Falkland Is", "ent": 297, "lat": -51.63, "lon": -58.72, "now": 0, "start": "2026-12-12", "bands": ["10m"]}, {"call": "ZD7LC", "entity": "St Helena", "ent": 334, "lat": -15.97, "lon": -5.72, "now": 0, "start": "2026-12-14", "bands": ["10m"]}, {"call": "5H1RK", "entity": "Tanzania", "ent": 28, "lat": -5.75, "lon": 33.92, "now": 0, "start": "2026-12-23", "bands": ["10m"]}, {"call": "C5H", "entity": "Gambia", "ent": 74, "lat": 13.4, "lon": -16.38, "now": 0, "start": "2026-12-27", "bands": ["40m", "30m", "20m", "17m", "15m", "12m", "10m", "6m"]}, {"call": "S79", "entity": "Seychelles", "ent": 235, "lat": -4.67, "lon": 55.47, "now": 0, "start": "2026-12-28", "bands": ["80m", "40m", "30m", "20m", "17m", "15m", "12m", "10m"]}, {"call": "KH0", "entity": "Marianas", "ent": 185, "lat": 15.18, "lon": 145.72, "now": 0, "start": "2026-12-29", "bands": ["80m", "40m", "30m", "20m", "17m", "15m", "12m", "10m"]}, {"call": "T88SM", "entity": "Palau", "ent": 252, "lat": 7.45, "lon": 134.53, "now": 0, "start": "2027-01-08", "bands": ["160m", "80m", "40m", "30m", "20m", "17m", "15m", "12m", "10m", "6m"]}, {"call": "8P9CB", "entity": "Barbados", "ent": 43, "lat": 13.18, "lon": -59.53, "now": 0, "start": "2027-01-09", "bands": ["20m", "17m", "15m", "12m", "10m"]}, {"call": "VP8TOG", "entity": "Falkland Is", "ent": 297, "lat": -51.63, "lon": -58.72, "now": 0, "start": "2027-01-10", "bands": ["80m", "10m"]}, {"call": "V6XG", "entity": "Micronesia", "ent": 278, "lat": 6.88, "lon": 158.2, "now": 0, "start": "2027-01-14", "bands": ["160m", "80m", "40m", "30m", "20m", "17m", "15m", "12m", "10m", "6m"]}, {"call": "XT2MAX", "entity": "Burkina Faso", "ent": 310, "lat": 12.0, "lon": -2.0, "now": 0, "start": "2027-01-17", "bands": ["80m", "40m", "30m", "20m", "17m", "15m", "12m", "10m"]}, {"call": "PJ7", "entity": "Sint Maarten", "ent": 225, "lat": 18.07, "lon": -63.07, "now": 0, "start": "2027-01-19", "bands": ["80m", "40m", "30m", "20m", "17m", "15m", "12m", "10m"]}, {"call": "3Y0L", "entity": "Peter I", "ent": 16, "lat": -68.77, "lon": -90.58, "now": 0, "start": "2027-02-01", "bands": []}, {"call": "V4", "entity": "St Kitts & Nevis", "ent": 276, "lat": 17.37, "lon": -62.78, "now": 0, "start": "2027-02-03", "bands": ["160m", "80m", "40m", "30m", "20m", "17m", "15m", "12m", "10m", "6m"]}, {"call": "H44MS", "entity": "Solomon Is", "ent": 147, "lat": -9.0, "lon": 160.0, "now": 0, "start": "2027-02-05", "bands": ["80m", "40m", "30m", "20m", "17m", "15m", "12m", "10m"]}, {"call": "T8KT", "entity": "Palau", "ent": 252, "lat": 7.45, "lon": 134.53, "now": 0, "start": "2027-02-10", "bands": ["160m", "80m", "40m", "30m", "20m", "17m", "15m", "12m", "10m", "6m"]}, {"call": "6O6X", "entity": "Somalia", "ent": 250, "lat": 2.03, "lon": 45.35, "now": 0, "start": "2027-02-15", "bands": ["80m", "40m", "30m", "20m", "17m", "15m", "12m", "10m"]}];
+  const DEF = 'PM95', KP = 'dx', FORCE = '';      // 既定の自局・端末に覚える名前の頭・言語の固定（NG3K版は英語に固定）
   const IONO = 'https://ja1bbe.github.io/ja1bbe-iono/';
   const SUMMARY_URL = 'https://raw.githubusercontent.com/ja1bbe/propagation/main/data/summary/paths.json';
   const NOAA = 'https://services.swpc.noaa.gov';
   const RAD = Math.PI / 180, EARTH = 6371, HALF = Math.PI * EARTH, GMPOLE = { lat: 80.8, lon: -72.6 };
-  const KNOWN = { 'JA1BBE': 'PM95RN' };      // 位置がわかっている局（コールサインで入れてもこのグリッドで計算）
+  const KNOWN = { 'JA1BBE': 'PM95RN', 'NG3K': 'FM19KA' };      // 位置がわかっている局（コールサインで入れてもこのグリッドで計算）
   const $ = id => document.getElementById(id);
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
@@ -165,7 +172,7 @@ Map: Natural Earth (land.json). Space weather: NOAA SWPC. Reception record: PSK 
   const rows = d => Array.isArray(d) && Array.isArray(d[0]) ? d.slice(1).map(r => Object.fromEntries(d[0].map((h, i) => [h, r[i]]))) : (d || []);
   let STATION = null, LAND = null, AUR = null, DRAP = null, SW = null, SFI = null, SUMMARY = null, CTY = null, SEL = null, HITS = [], LG = PAGE_LANG, T = null;
   const flag = (k, def) => { const v = LS(k); return v === null ? def : v === '1'; };
-  let SHOW_UP = flag('dx.showUp', false), MAG_ON = flag('dx.mag', true), DRAP_ON = flag('dx.drap', true), STORM_ON = flag('dx.storm', true);
+  let SHOW_UP = flag(KP + '.showUp', false), MAG_ON = flag(KP + '.mag', true), DRAP_ON = flag(KP + '.drap', true), STORM_ON = flag(KP + '.storm', true);
 
   // ---- 太陽と経路の計算（ナウキャストと同じ式）
   function sunElev(lat, lon, t) {
@@ -308,7 +315,7 @@ Map: Natural Earth (land.json). Space weather: NOAA SWPC. Reception record: PSK 
       `<br>${T.spState(r.sp)}` + (r.sk ? `<br><span style="color:#b25ee8">ずらした方位 <b>${r.sk.az.toFixed(0)}°</b> を試す価値あり（${llToGrid(r.sk.turn[0], r.sk.turn[1])} 付近で曲がる経路、遠回り 約${kmStr(r.sk.extra)} km。検証中）</span>` : r.needSkew ? '<br>左右60°までずらしても、オーロラ帯を避けて届く経路は見つかりませんでした。' : ''),
     spState: sp => `短経路：地磁気緯度 ${sp.mag >= 0 ? 'N' : 'S'}${Math.abs(sp.mag).toFixed(0)}° まで、途中の${Math.round(sp.dark * 100)}%が夜` + (sp.aur == null ? '' : sp.aur >= 30 ? `、<b style="color:#d64545">オーロラ帯を通過（${sp.aur.toFixed(0)}%）</b>` : sp.aur >= 10 ? `、オーロラ帯の縁（${sp.aur.toFixed(0)}%）` : ''),
     toList: '一覧の案内へ ↓', noneActive: 'いま運用中のペディションはありません。',
-    bad: g => `「${esc(g)}」を判別できなかったため、PM95 を中心にしています。グリッドロケータ（4桁か6桁）か、コールサインで入れてください。`,
+    bad: g => `「${esc(g)}」を判別できなかったため、${esc(DEF)} を中心にしています。グリッドロケータ（4桁か6桁）か、コールサインで入れてください。`,
     centre: (n, note) => `自局：${esc(n)}（${note}）を中心にしています。`, gridNote: g => `グリッド ${g} の中心`, knownNote: g => `登録済みのグリッド ${g}`,
     callNote: (e, g) => `${esc(e)} の代表位置 ${g}。正確にはグリッドロケータで入れてください`, ctyFail: 'コールサインの表を読み込めませんでした。グリッドロケータで入れてください。',
     az: (n, sp, lp, km) => `方位（${esc(n)} から）<b>${sp}°</b>　長経路 ${lp}°　${km} km`,
@@ -342,7 +349,7 @@ Map: Natural Earth (land.json). Space weather: NOAA SWPC. Reception record: PSK 
       `<br>${T.spState(r.sp)}` + (r.sk ? `<br><span style="color:#b25ee8">Worth trying a skewed heading of <b>${r.sk.az.toFixed(0)}°</b> (path bending near ${llToGrid(r.sk.turn[0], r.sk.turn[1])}, about ${kmStr(r.sk.extra)} km longer; under test)</span>` : r.needSkew ? '<br>No path avoiding the auroral oval was found within ±60°.' : ''),
     spState: sp => `Short path: up to geomagnetic latitude ${sp.mag >= 0 ? 'N' : 'S'}${Math.abs(sp.mag).toFixed(0)}°, ${Math.round(sp.dark * 100)}% in darkness` + (sp.aur == null ? '' : sp.aur >= 30 ? `, <b style="color:#d64545">crosses the auroral oval (${sp.aur.toFixed(0)}%)</b>` : sp.aur >= 10 ? `, edge of the auroral oval (${sp.aur.toFixed(0)}%)` : ''),
     toList: 'See details ↓', noneActive: 'No operations are active right now.',
-    bad: g => `“${esc(g)}” was not recognised; the map is centred on PM95. Enter a 4- or 6-character grid or a callsign.`,
+    bad: g => `“${esc(g)}” was not recognised; the map is centred on ${esc(DEF)}. Enter a 4- or 6-character grid or a callsign.`,
     centre: (n, note) => `Your station: ${esc(n)} (${note}).`, gridNote: g => `centre of grid ${g}`, knownNote: g => `registered grid ${g}`,
     callNote: (e, g) => `centre of ${esc(e)}, ${g}; enter your grid for accuracy`, ctyFail: 'The callsign table could not be loaded. Please enter a grid locator.',
     az: (n, sp, lp, km) => `Heading from ${esc(n)} <b>${sp}°</b>　long path ${lp}°　${km} km`,
@@ -456,7 +463,7 @@ Map: Natural Earth (land.json). Space weather: NOAA SWPC. Reception record: PSK 
       sw('background:rgb(255,140,60)', L[9]), sw('background:repeating-linear-gradient(90deg,rgb(255,90,90) 0 5px,transparent 5px 8px)', L[10])].join('');
     const now = Date.now(), cur = $('opSel').value;
     $('opSel').innerHTML = `<option value="">${T.opNone}</option>` + OPS.map((o, i) => o.lat == null ? '' :
-      `<option value="${i}">${esc(o.call)}　${esc(o.entity)}（${o.now ? T.opNow : T.opUp(Math.max(0, Math.ceil((isoDay(o.start) - now) / 864e5)))}）</option>`).join('');
+      `<option value="${i}">${esc(o.call)}　${esc(o.entity)}${LG === 'en' ? ' (' : '（'}${o.now ? T.opNow : T.opUp(Math.max(0, Math.ceil((isoDay(o.start) - now) / 864e5)))}${LG === 'en' ? ')' : '）'}</option>`).join('');
     $('opSel').value = SEL != null ? String(SEL) : cur; btns();
   }
   function btns() {
@@ -597,14 +604,14 @@ Map: Natural Earth (land.json). Space weather: NOAA SWPC. Reception record: PSK 
       catch (e) { note = 'ctyfail'; }
     }
     const ok = !!r;
-    if (!r) { const d = gridToLL('PM95'); r = { name: 'PM95', lat: d.lat, lon: d.lon }; }
+    if (!r) { const d = gridToLL(KNOWN[DEF] || DEF); r = { name: DEF, lat: d.lat, lon: d.lon }; }
     STATION = r;
-    if (ok && userSet) LS('dx.station', raw);
-    LG = ok && (userSet || LS('dx.station')) ? (isJapan(r.lat, r.lon) ? 'ja' : 'en') : PAGE_LANG;
+    if (ok && userSet) LS(KP + '.station', raw);
+    LG = FORCE || (ok && (userSet || LS(KP + '.station')) ? (isJapan(r.lat, r.lon) ? 'ja' : 'en') : PAGE_LANG);
     T = LG === 'en' ? TE : TJ;
     $('stInfo').innerHTML = !ok ? (note === 'ctyfail' ? T.ctyFail : T.bad(raw)) :
       T.centre(r.name, note === 'known' ? T.knownNote(KNOWN[raw]) : note === 'grid' ? T.gridNote(r.name) : T.callNote(r.ent, llToGrid(r.lat, r.lon)));
-    $('myGrid').value = raw || 'PM95';
+    $('myGrid').value = raw || DEF;
     renderLabels();
   }
   async function refresh(userSet) { await setStation(userSet); drawMap(); renderList(); }
@@ -619,8 +626,8 @@ Map: Natural Earth (land.json). Space weather: NOAA SWPC. Reception record: PSK 
   $('gridGo').addEventListener('click', () => refresh(true));
   $('myGrid').addEventListener('keydown', e => { if (e.key === 'Enter') { e.target.blur(); refresh(true); } });
   const tog = (id, key, get, set) => $(id).addEventListener('click', () => { set(!get()); LS(key, get() ? '1' : '0'); btns(); drawMap(); });
-  tog('magBtn', 'dx.mag', () => MAG_ON, v => MAG_ON = v); tog('drapBtn', 'dx.drap', () => DRAP_ON, v => DRAP_ON = v);
-  tog('stormBtn', 'dx.storm', () => STORM_ON, v => STORM_ON = v); tog('upBtn', 'dx.showUp', () => SHOW_UP, v => SHOW_UP = v);
+  tog('magBtn', KP + '.mag', () => MAG_ON, v => MAG_ON = v); tog('drapBtn', KP + '.drap', () => DRAP_ON, v => DRAP_ON = v);
+  tog('stormBtn', KP + '.storm', () => STORM_ON, v => STORM_ON = v); tog('upBtn', KP + '.showUp', () => SHOW_UP, v => SHOW_UP = v);
   const fh = () => { const f = document.querySelector('.filters'); if (f) document.documentElement.style.setProperty('--fh', f.offsetHeight + 'px'); };
   window.addEventListener('resize', () => { drawMap(); fh(); }); fh();
 
@@ -641,7 +648,7 @@ Map: Natural Earth (land.json). Space weather: NOAA SWPC. Reception record: PSK 
     ]).then(() => { btns(); drawMap(); });
   }
   (async function init() {
-    const s = LS('dx.station'); if (s) $('myGrid').value = s;
+    const s = LS(KP + '.station'); if (s) $('myGrid').value = s;
     await setStation(false);
     document.querySelectorAll('.adv[data-i]').forEach(el => el.textContent = T.loading);
     drawMap(); renderList();
