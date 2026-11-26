@@ -7,6 +7,7 @@ GitHub Pages で公開します。
 
 - 出典: NG3K Announced DX Operations（Bill Feidt, NG3K） https://www.ng3k.com/Misc/adxo.html
 - 作成: JA1BBE
+- `docs/ng3k.html` は、NG3K（Bill Feidt）へのクリスマスの贈り物の版です（英語、自局の既定は NG3K・FM19ka）。
 
 ## 公開までの手順
 
